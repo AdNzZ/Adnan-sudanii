@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Dark Passenger</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Permanent+Marker&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Font for Header */
+        .font-title {
+            font-family: 'Permanent Marker', cursive;
+        }
+
+        /* Custom scrollbar for a more modern feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            border: 3px solid transparent;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        html:not(.dark) ::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+        html:not(.dark) ::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+
+
+        /* Glassmorphism base style */
+        .glass-pane {
+            background: rgba(10, 10, 10, 0.3);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Light theme overrides */
+        html:not(.dark) .glass-pane {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        html:not(.dark) body {
+            background-image: url('https://www.transparenttextures.com/patterns/clean-gray-paper.png');
+            background-color: #f0f0f0;
+            color: var(--text-color);
+        }
+
+        html.dark body {
+            background-image: url('https://www.transparenttextures.com/patterns/asfalt-dark.png');
+            background-color: #121212;
+        }
+
+        /* More realistic blood stain effects */
+        .blood-stain {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.5;
+            filter: blur(15px);
+        }
+        .stain-1 {
+            width: 500px; height: 500px;
+            top: -150px; right: -200px;
+            background: radial-gradient(circle, rgba(139,0,0,0.3) 0%, rgba(139,0,0,0) 60%);
+        }
+        .stain-2 {
+            width: 600px; height: 600px;
+            bottom: -250px; left: -250px;
+            background: radial-gradient(circle, rgba(139,0,0,0.25) 0%, rgba(139,0,0,0) 70%);
+        }
+        .stain-3 {
+            width: 300px; height: 300px;
+            top: 20%; left: 5%;
+             background: radial-gradient(circle, rgba(139,0,0,0.2) 0%, rgba(139,0,0,0) 65%);
+        }
+
+        /* Smooth animations */
+        .task-item, .day-section {
+            transition: all 0.3s ease;
+        }
+
+        /* Stable Day Layout */
+        .day-section {
+            display: flex;
+            flex-direction: column;
+            min-height: 380px;
+            max-height: 60vh;
+        }
+        .task-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 4px; /* Space for scrollbar */
+        }
+
+
+        /* Styles for AI response formatting */
+        #harry-chat-history p { margin-bottom: 0.75rem; }
+        #harry-chat-history strong { color: var(--main-red); }
+        #harry-chat-history em { font-style: italic; }
+
+        /* Custom Colors */
+        :root {
+            --dark-red: #8B0000;
+            --light-red: #D32F2F; /* A more muted, serious red for light mode */
+        }
+        html.dark {
+            --main-red: var(--dark-red);
+            --text-color: #e5e7eb;
+            --text-muted: #9ca3af;
+            --bg-color: #1a1a1a;
+        }
+        html:not(.dark) {
+            --main-red: var(--light-red);
+            --text-color: #1f2937; /* Darkened for better visibility */
+            --text-muted: #4b5563; /* Darkened for better visibility */
+            --bg-color: #ffffff;
+        }
+        html:not(.dark) option {
+            background-color: white;
+            color: black;
+        }
+        html.dark option {
+            background-color: var(--bg-color, #1a1a1a);
+            color: var(--text-color, #e5e7eb);
+        }
+
+        /* Loading Spinner */
+        .loader {
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-left-color: var(--main-red);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        html:not(.dark) .loader {
+             border-color: rgba(0,0,0,0.2);
+             border-left-color: var(--main-red);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+    </style>
+</head>
+<body class="font-sans antialiased text-gray-200 bg-gray-900 transition-colors duration-500">
+
+    <!-- Background Stain Effects -->
+    <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10">
+        <div class="blood-stain stain-1"></div>
+        <div class="blood-stain stain-2"></div>
+        <div class="blood-stain stain-3"></div>
+    </div>
+
+    <div id="app" class="relative min-h-screen p-4 flex flex-col gap-4 overflow-hidden">
+
+        <!-- Header -->
+        <header class="glass-pane rounded-2xl p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 flex-shrink-0">
+            <!-- Group 1: Title -->
+            <div class="text-center sm:text-left">
+                <h1 class="font-title text-3xl" style="color: var(--main-red);">The Dark Passenger</h1>
+                <p class="text-sm" style="color: var(--text-muted);">Feed your productivity urges.</p>
+            </div>
+
+            <!-- Group 2: Week Nav (appears in the middle on larger screens) -->
+            <div class="flex items-center gap-2 justify-center order-3 sm:order-2">
+                <button id="prev-week-btn" class="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition" title="Previous Week">
+                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+                <p id="week-display" class="text-sm font-semibold w-48 text-center"></p>
+                <button id="next-week-btn" class="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition" title="Next Week">
+                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
+
+            <!-- Group 3: User Info & Controls -->
+            <div class="flex items-center gap-2 sm:gap-4 justify-center sm:justify-end order-2 sm:order-3">
+                <div class="hidden sm:block text-right">
+                    <p id="greeting" class="font-semibold text-lg" style="color: var(--main-red);">Hello, Guest</p>
+                    <p id="streak-counter" class="text-sm" style="color: var(--text-muted);"></p>
+                </div>
+                <button id="open-harry-btn" class="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white" title="Chat with Harry">
+                    <svg class="w-6 h-6" style="color: var(--text-muted);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                </button>
+                <button id="theme-toggle" class="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white" title="Toggle Theme">
+                    <svg id="theme-icon" class="w-6 h-6" style="color: var(--text-muted);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                </button>
+            </div>
+        </header>
+
+
+        <!-- Task Input -->
+        <section id="add-task-section" class="glass-pane rounded-2xl p-4 flex-shrink-0">
+            <form id="add-task-form" class="flex flex-col sm:flex-row items-center gap-3">
+                <input type="text" id="task-input" placeholder="What's your next target...?" class="flex-grow w-full bg-transparent border-b-2 border-gray-500 focus:border-red-500 text-lg py-2 px-1 outline-none transition" required>
+                <select id="priority-select" class="bg-transparent border border-gray-600 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-red-500">
+                    <option value="1">Low</option>
+                    <option value="2" selected>Medium</option>
+                    <option value="3">High</option>
+                </select>
+                <select id="day-select" class="bg-transparent border border-gray-600 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-red-500">
+                    <!-- Options will be populated by JS -->
+                </select>
+                <button type="submit" class="w-full sm:w-auto bg-red-800 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-transform transform hover:scale-105 dark:bg-[var(--dark-red)] dark:hover:bg-red-900">Add Task</button>
+            </form>
+        </section>
+
+        <!-- Day Sections -->
+        <div id="task-sections-container" class="flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 overflow-y-auto pr-2 pb-4">
+            <!-- Sections will be dynamically populated, but pre-defined for layout stability -->
+            <section id="day-Sunday" class="day-section glass-pane rounded-2xl p-4">
+                <h3 class="text-lg font-semibold mb-3 flex-shrink-0">Sunday</h3>
+                <div class="task-list space-y-2"></div>
+            </section>
+            <section id="day-Monday" class="day-section glass-pane rounded-2xl p-4">
+                <h3 class="text-lg font-semibold mb-3 flex-shrink-0">Monday</h3>
+                <div class="task-list space-y-2"></div>
+            </section>
+            <section id="day-Tuesday" class="day-section glass-pane rounded-2xl p-4">
+                <h3 class="text-lg font-semibold mb-3 flex-shrink-0">Tuesday</h3>
+                <div class="task-list space-y-2"></div>
+            </section>
+            <section id="day-Wednesday" class="day-section glass-pane rounded-2xl p-4">
+                <h3 class="text-lg font-semibold mb-3 flex-shrink-0">Wednesday</h3>
+                <div class="task-list space-y-2"></div>
+            </section>
+            <section id="day-Thursday" class="day-section glass-pane rounded-2xl p-4">
+                <h3 class="text-lg font-semibold mb-3 flex-shrink-0">Thursday</h3>
+                <div class="task-list space-y-2"></div>
+            </section>
+            <section id="day-Friday" class="day-section glass-pane rounded-2xl p-4">
+                <h3 class="text-lg font-semibold mb-3 flex-shrink-0">Friday</h3>
+                <div class="task-list space-y-2"></div>
+            </section>
+            <section id="day-Saturday" class="day-section glass-pane rounded-2xl p-4">
+                <h3 class="text-lg font-semibold mb-3 flex-shrink-0">Saturday</h3>
+                <div class="task-list space-y-2"></div>
+            </section>
+        </div>
+    </div>
+
+    <!-- AI Chat Modal -->
+    <div id="harry-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="glass-pane rounded-2xl p-4 flex-1 flex flex-col w-full h-full max-w-2xl max-h-[90vh] shadow-2xl">
+            <div class="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
+                 <div class="flex items-center gap-4">
+                     <!-- Harry's Profile Picture -->
+                     <div class="w-12 h-12 flex-shrink-0 bg-red-900/50 rounded-full flex items-center justify-center border-2 border-red-500/30">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-8 h-8 text-red-300">
+                               <path fill="currentColor" d="M12,2C6.47,2,2,6.47,2,12s4.47,10,10,10s10-4.47,10-10S17.53,2,12,2z M12,20c-4.41,0-8-3.59-8-8s3.59-8,8-8s8,3.59,8,8S16.41,20,12,20z"/>
+                               <path fill="currentColor" d="M15.5,11c0.83,0,1.5-0.67,1.5-1.5S16.33,8,15.5,8S14,8.67,14,9.5S14.67,11,15.5,11z"/>
+                                <path fill="currentColor" d="M8.5,11c0.83,0,1.5-0.67,1.5-1.5S9.33,8,8.5,8S7,8.67,7,9.5S7.67,11,8.5,11z"/>
+                                <path fill="currentColor" d="M12,17.5c2.33,0,4.31-1.46,5.11-3.5H6.89C7.69,16.04,9.67,17.5,12,17.5z"/>
+                           </svg>
+                     </div>
+                     <div>
+                         <h2 class="text-xl font-bold" style="color: var(--main-red);">Harry</h2>
+                         <p class="text-sm" style="color: var(--text-muted);">Your guide in the dark</p>
+                     </div>
+                 </div>
+                <button id="close-harry-btn" class="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition" title="Close Chat">
+                    <svg class="w-6 h-6" style="color: var(--text-muted);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <div id="harry-chat-history" class="flex-1 overflow-y-auto mb-4 p-2 text-sm" style="color: var(--text-color);">
+                <p>Hello. I'm Harry, your AI assistant. I can help you with your tasks or answer questions about this app. How can I assist you today?</p>
+            </div>
+             <div id="harry-loading" class="hidden justify-center items-center my-2">
+                 <div class="loader"></div>
+            </div>
+
+            <form id="harry-chat-form" class="relative">
+                <input type="text" id="harry-input" placeholder="Ask Harry anything..." class="w-full bg-black/20 dark:border-gray-600 border-gray-400 border rounded-lg py-2 pl-3 pr-10 outline-none focus:ring-2 focus:ring-red-500 transition">
+                <button type="submit" class="absolute inset-y-0 right-0 flex items-center pr-3">
+                    <svg class="w-5 h-5 text-gray-400 hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, addDoc, onSnapshot, query, updateDoc, deleteDoc, getDocs, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- CONFIG & INITIALIZATION ---
+        // Use environment variables provided by the platform
+        const firebaseConfig = typeof __firebase_config !== 'undefined'
+            ? JSON.parse(__firebase_config)
+            : { apiKey: "YOUR_FALLBACK_API_KEY", authDomain: "...", projectId: "...", /* ...other keys */}; // Fallback config
+        const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.projectId || 'default-app-id';
+
+        // NOTE: The API key is handled by the execution environment.
+        const GEMINI_API_KEY = "";
+        const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`;
+
+
+        // --- DOM ELEMENTS ---
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const addTaskForm = document.getElementById('add-task-form');
+        const taskInput = document.getElementById('task-input');
+        const prioritySelect = document.getElementById('priority-select');
+        const daySelect = document.getElementById('day-select');
+        const taskSectionsContainer = document.getElementById('task-sections-container');
+        const greetingEl = document.getElementById('greeting');
+        const streakCounterEl = document.getElementById('streak-counter');
+
+        // Week navigation
+        const prevWeekBtn = document.getElementById('prev-week-btn');
+        const nextWeekBtn = document.getElementById('next-week-btn');
+        const weekDisplay = document.getElementById('week-display');
+
+        // AI Chat Elements
+        const harryModal = document.getElementById('harry-modal');
+        const openHarryBtn = document.getElementById('open-harry-btn');
+        const closeHarryBtn = document.getElementById('close-harry-btn');
+        const harryChatForm = document.getElementById('harry-chat-form');
+        const harryInput = document.getElementById('harry-input');
+        const harryChatHistory = document.getElementById('harry-chat-history');
+        const harryLoading = document.getElementById('harry-loading');
+        const addTaskSection = document.getElementById('add-task-section');
+
+        let db; // Firestore instance
+        let chatHistory = [];
+        let currentUser = null;
+        let tasksUnsubscribe = () => {};
+        let streakUnsubscribe = () => {};
+        let currentDate = new Date();
+        let allUserTasks = []; // Cache for all user tasks
+
+        const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const today = new Date();
+
+        // --- DATE UTILITIES ---
+        function getStartOfWeek(date) {
+            const d = new Date(date);
+            const day = d.getDay();
+            const diff = d.getDate() - day;
+            return new Date(d.setDate(diff));
+        }
+
+        function getWeekDays(startDate) {
+            const dates = [];
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(startDate);
+                d.setDate(d.getDate() + i);
+                dates.push(d);
+            }
+            return dates;
+        }
+
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        function displayWeek(date) {
+            const start = getStartOfWeek(date);
+            const end = new Date(start);
+            end.setDate(start.getDate() + 6);
+
+            const options = { month: 'short', day: 'numeric' };
+            weekDisplay.textContent = `${start.toLocaleDateString(undefined, options)} - ${end.toLocaleDateString(undefined, options)}`;
+
+            populateDaySelect(getWeekDays(start));
+            renderDayHeaders(getWeekDays(start));
+        }
+
+
+        // --- THEME MANAGEMENT ---
+        const applyTheme = (isDark) => {
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                themeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>`;
+            } else {
+                document.documentElement.classList.remove('dark');
+                themeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>`;
+            }
+        };
+
+        themeToggle.addEventListener('click', () => {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            applyTheme(isDark);
+        });
+
+        // --- WEEK NAVIGATION ---
+        prevWeekBtn.addEventListener('click', () => {
+            currentDate.setDate(currentDate.getDate() - 7);
+            displayWeek(currentDate);
+            renderTasks(allUserTasks, db); // Re-render with cached tasks
+        });
+
+        nextWeekBtn.addEventListener('click', () => {
+            currentDate.setDate(currentDate.getDate() + 7);
+            displayWeek(currentDate);
+            renderTasks(allUserTasks, db); // Re-render with cached tasks
+        });
+
+
+        // --- AI CHAT MODAL ---
+        openHarryBtn.addEventListener('click', () => harryModal.classList.remove('hidden'));
+        closeHarryBtn.addEventListener('click', () => harryModal.classList.add('hidden'));
+
+
+        // --- FIRESTORE REALTIME LISTENERS ---
+        function setupRealtimeListeners(userId, db) {
+            tasksUnsubscribe();
+            streakUnsubscribe();
+
+            const tasksCollectionPath = `/artifacts/${appId}/users/${userId}/tasks`;
+            const streakDocPath = `/artifacts/${appId}/users/${userId}/userData/streak`;
+
+            const q = query(collection(db, tasksCollectionPath));
+            tasksUnsubscribe = onSnapshot(q, (snapshot) => {
+                allUserTasks = []; // Clear and repopulate the cache
+                snapshot.forEach(doc => allUserTasks.push({ id: doc.id, ...doc.data() }));
+                renderTasks(allUserTasks, db); // Render with the full, updated cache
+            }, (error) => console.error("Error fetching tasks:", error));
+
+            const streakDocRef = doc(db, streakDocPath);
+            streakUnsubscribe = onSnapshot(streakDocRef, (doc) => {
+                if (doc.exists()) {
+                    const data = doc.data();
+                    streakCounterEl.textContent = `Current Streak: ${data.count || 0} days`;
+                } else {
+                    streakCounterEl.textContent = 'Current Streak: 0 days';
+                }
+            }, (error) => console.error("Error fetching streak:", error));
+        }
+
+
+        // --- TASK RENDERING ---
+        const renderTasks = (tasks, db) => {
+            const weekDates = getWeekDays(getStartOfWeek(currentDate)).map(formatDate);
+            const tasksByDay = weekDates.reduce((acc, date) => ({ ...acc, [date]: [] }), {});
+
+            // Filter all tasks to only include those for the currently displayed week
+            tasks.forEach(task => {
+                if (tasksByDay[task.day]) {
+                    tasksByDay[task.day].push(task);
+                }
+            });
+
+            weekDates.forEach((dateStr, index) => {
+                const dayName = daysOfWeek[index];
+                const sectionEl = document.getElementById(`day-${dayName}`);
+                if (!sectionEl) return;
+
+                const taskListEl = sectionEl.querySelector('.task-list');
+                const dayTasks = tasksByDay[dateStr].sort((a, b) => b.priority - a.priority);
+
+                if (dayTasks.length > 0) {
+                    taskListEl.innerHTML = dayTasks.map(createTaskHTML).join('');
+                } else {
+                    taskListEl.innerHTML = '<p class="text-sm text-gray-400 dark:text-gray-500 p-2">No targets for this day.</p>';
+                }
+            });
+
+            // Event listeners are now handled by delegation, so no need to re-add them here.
+        };
+
+        const renderDayHeaders = (weekDays) => {
+            weekDays.forEach((date, index) => {
+                const dayName = daysOfWeek[index];
+                const sectionEl = document.getElementById(`day-${dayName}`);
+                if (!sectionEl) return;
+                const headerEl = sectionEl.querySelector('h3');
+                const formattedDate = formatDate(date);
+
+                // Add a quick-add button to each day header
+                headerEl.innerHTML = `
+                    <span class="day-header-text">${dayName} <span class="text-sm text-gray-400">${date.getDate()}</span></span>
+                    <button class="quick-add-btn p-1 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition" title="Add task to ${dayName}" data-date="${formattedDate}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    </button>
+                `;
+
+                headerEl.classList.add('flex', 'justify-between', 'items-center');
+
+                const dayHeaderText = headerEl.querySelector('.day-header-text');
+                if (formattedDate === formatDate(today)) {
+                    dayHeaderText.style.color = 'var(--main-red)';
+                } else {
+                    dayHeaderText.style.color = 'var(--text-color)';
+                }
+            });
+        };
+
+        const getPriorityStyles = (priority) => {
+            switch(parseInt(priority)) {
+                case 3: return { color: 'border-red-500', label: 'High' };
+                case 2: return { color: 'border-yellow-500', label: 'Medium' };
+                case 1: return { color: 'border-blue-500', label: 'Low' };
+                default: return { color: 'border-gray-500', label: 'None'};
+            }
+        };
+
+        const createTaskHTML = (task) => {
+            const priority = getPriorityStyles(task.priority);
+            return `
+                <div class="task-item flex items-center justify-between p-2 rounded-lg bg-black/10 dark:bg-black/20 border-l-4 ${priority.color} ${task.completed ? 'opacity-50' : ''}" data-id="${task.id}">
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" class="task-checkbox h-5 w-5 rounded bg-gray-700 border-gray-600 text-red-600 focus:ring-red-500" ${task.completed ? 'checked' : ''}>
+                        <p class="task-text ${task.completed ? 'line-through' : ''}">${task.text}</p>
+                    </div>
+                    <button class="delete-task-btn p-1 text-gray-500 hover:text-red-500 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+            `;
+        };
+
+        // --- EVENT LISTENERS ---
+        // Using event delegation on a parent container is more efficient
+        // than adding listeners to every single task item.
+        taskSectionsContainer.addEventListener('click', (e) => {
+            // Check for task completion toggle
+            if (e.target.classList.contains('task-checkbox')) {
+                const taskId = e.target.closest('.task-item').dataset.id;
+                firestoreActions.toggleTaskCompletion(taskId, e.target.checked, db);
+                return; // Event handled
+            }
+
+            // Check for task deletion
+            const deleteBtn = e.target.closest('.delete-task-btn');
+            if (deleteBtn) {
+                const taskId = deleteBtn.closest('.task-item').dataset.id;
+                firestoreActions.deleteTask(taskId, db);
+                return; // Event handled
+            }
+
+            // Check for quick-add button click
+            const quickAddBtn = e.target.closest('.quick-add-btn');
+            if (quickAddBtn) {
+                const date = quickAddBtn.dataset.date;
+                daySelect.value = date;
+                taskInput.focus();
+                // Scroll the form into view for a better user experience
+                addTaskSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+
+
+        // --- FIRESTORE CRUD OPERATIONS ---
+        const firestoreActions = {
+            addTask: async (task, db) => {
+                if (!currentUser) return;
+                const tasksCollectionPath = `/artifacts/${appId}/users/${currentUser.uid}/tasks`;
+                try {
+                    await addDoc(collection(db, tasksCollectionPath), task);
+                } catch (error) {
+                    console.error("Error adding task:", error);
+                }
+            },
+            toggleTaskCompletion: async (taskId, completed, db) => {
+                if (!currentUser) return;
+                const taskDocPath = `/artifacts/${appId}/users/${currentUser.uid}/tasks/${taskId}`;
+                try {
+                    await updateDoc(doc(db, taskDocPath), { completed });
+                    await firestoreActions.checkAllTasksCompletion(db);
+                } catch(error) {
+                    console.error("Error updating task:", error);
+                }
+            },
+            deleteTask: async (taskId, db) => {
+                if (!currentUser) return;
+                const taskDocPath = `/artifacts/${appId}/users/${currentUser.uid}/tasks/${taskId}`;
+                try {
+                    await deleteDoc(doc(db, taskDocPath));
+                } catch (error) {
+                    console.error("Error deleting task:", error);
+                }
+            },
+            checkAllTasksCompletion: async (db) => {
+                if (!currentUser) return;
+                const tasksCollectionPath = `/artifacts/${appId}/users/${currentUser.uid}/tasks`;
+                const q = query(collection(db, tasksCollectionPath));
+                const querySnapshot = await getDocs(q);
+                const tasks = [];
+                querySnapshot.forEach(doc => tasks.push(doc.data()));
+
+                const allTasksDone = tasks.length > 0 && tasks.every(t => t.completed);
+
+                if (allTasksDone) {
+                    const streakDocRef = doc(db, `/artifacts/${appId}/users/${currentUser.uid}/userData/streak`);
+                    const streakDoc = await getDoc(streakDocRef);
+
+                    const todayStr = new Date().toISOString().split('T')[0];
+
+                    if (!streakDoc.exists()) {
+                        await setDoc(streakDocRef, { count: 1, lastUpdated: todayStr });
+                    } else {
+                        const data = streakDoc.data();
+                        if (data.lastUpdated !== todayStr) {
+                            const yesterday = new Date();
+                            yesterday.setDate(yesterday.getDate() - 1);
+                            const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+                            const newCount = data.lastUpdated === yesterdayStr ? (data.count || 0) + 1 : 1;
+                            await setDoc(streakDocRef, { count: newCount, lastUpdated: todayStr });
+                        }
+                    }
+                }
+            }
+        };
+
+        // --- AI CHATBOT "HARRY" ---
+        harryChatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userInput = harryInput.value.trim();
+            if (!userInput) return;
+
+            appendMessage(userInput, 'user');
+            harryInput.value = '';
+            harryLoading.classList.remove('hidden');
+
+            try {
+                 const systemInstruction = {
+                      parts: [{ text: "You are Harry, a helpful AI assistant in a to-do app called 'The Dark Passenger'. Your personality is inspired by the character Dexter Morgan: calm, methodical, precise, and slightly dark-humored, but ultimately helpful and focused on productivity. You refer to tasks as 'targets' and productivity as 'the ritual'. Your goal is to help the user stay organized. You are aware of the app's features: tasks organized by day, priorities, and streaks. When formatting, use single asterisks for *italics* and double asterisks for **bold** text." }]
+                 };
+
+                 const requestPayload = {
+                      contents: [...chatHistory, { role: "user", parts: [{ text: userInput }] }],
+                      systemInstruction: systemInstruction
+                 };
+
+                const response = await fetch(GEMINI_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestPayload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                const botResponse = data.candidates[0].content.parts[0].text;
+                appendMessage(botResponse, 'model');
+
+            } catch (error) {
+                console.error("Harry AI Error:", error);
+                appendMessage("I seem to be having some trouble connecting right now. Please try again later.", 'model');
+            } finally {
+                harryLoading.classList.add('hidden');
+            }
+        });
+
+        const appendMessage = (text, role) => {
+            const messageEl = document.createElement('div');
+            if (role === 'user') {
+                messageEl.className = 'text-right my-2';
+                messageEl.innerHTML = `<p class="inline-block bg-red-800/50 rounded-lg px-3 py-2">${text}</p>`;
+            } else {
+                messageEl.innerHTML = marked.parse(text);
+            }
+            harryChatHistory.appendChild(messageEl);
+            harryChatHistory.scrollTop = harryChatHistory.scrollHeight;
+
+            chatHistory.push({ role, parts: [{ text }] });
+            if (chatHistory.length > 10) {
+                chatHistory.splice(0, 2);
+            }
+        };
+
+        // --- INITIAL SETUP ---
+        const setupApp = () => {
+            // Set theme from local storage or system preference
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            applyTheme(savedTheme ? savedTheme === 'dark' : prefersDark);
+
+            // Populate day select dropdown
+            function populateDaySelect(weekDays) {
+                daySelect.innerHTML = '';
+                weekDays.forEach(date => {
+                    const option = document.createElement('option');
+                    option.value = formatDate(date);
+                    option.textContent = `${daysOfWeek[date.getDay()]} (${date.toLocaleDateString()})`;
+                    if (formatDate(date) === formatDate(today)) {
+                        option.selected = true;
+                    }
+                    daySelect.appendChild(option);
+                });
+            }
+
+            // Initial UI Render
+            displayWeek(currentDate);
+
+            // Add Task Form Listener
+            addTaskForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const text = taskInput.value.trim();
+                if (text && currentUser) {
+                    const task = {
+                        text: text,
+                        priority: prioritySelect.value,
+                        day: daySelect.value,
+                        completed: false,
+                        createdAt: new Date()
+                    };
+                    firestoreActions.addTask(task, db);
+                    taskInput.value = '';
+                    taskInput.focus();
+                } else if (text) {
+                    alert("Cannot add task: Not signed in.");
+                }
+            });
+
+            // Initialize Firebase and Auth
+            try {
+                const app = initializeApp(firebaseConfig);
+                const analytics = getAnalytics(app);
+                db = getFirestore(app); // Assign to module-level db variable
+                const auth = getAuth(app);
+
+                greetingEl.textContent = "Authenticating...";
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        currentUser = user;
+                        const name = user.isAnonymous ? "Guest" : (user.displayName || "User");
+                        greetingEl.textContent = `Hello, ${name}`;
+                        setupRealtimeListeners(user.uid, db);
+                    } else {
+                         try {
+                             greetingEl.textContent = "Signing in...";
+                             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                                 await signInWithCustomToken(auth, __initial_auth_token);
+                             } else {
+                                 await signInAnonymously(auth);
+                             }
+                         } catch (error) {
+                             console.error("Authentication error:", error);
+                             greetingEl.textContent = "Auth Failed";
+                         }
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase initialization failed. App is in offline mode.", error);
+                greetingEl.textContent = "Hello, Guest";
+                streakCounterEl.textContent = "Offline Mode";
+            }
+        };
+
+        setupApp();
+
+    </script>
+</body>
+</html>
