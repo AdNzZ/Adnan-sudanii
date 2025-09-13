@@ -322,10 +322,16 @@
         import { getFirestore, collection, doc, addDoc, onSnapshot, query, updateDoc, deleteDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         // --- CONFIG & INITIALIZATION ---
-        // Use environment variables provided by the platform
-        const firebaseConfig = typeof __firebase_config !== 'undefined' 
-            ? JSON.parse(__firebase_config) 
-            : { apiKey: "YOUR_FALLBACK_API_KEY", authDomain: "...", projectId: "...", /* ...other keys */}; // Fallback config
+        // Firebase configuration provided by user
+        const firebaseConfig = {
+          apiKey: "AIzaSyDy4uv0XszUS8x05nNW0maDSLUfsiKegmk",
+          authDomain: "dark-passenger-50294.firebaseapp.com",
+          projectId: "dark-passenger-50294",
+          storageBucket: "dark-passenger-50294.firebasestorage.app",
+          messagingSenderId: "112738591566",
+          appId: "1:112738591566:web:bd51aaa859ee5cb507b41f",
+          measurementId: "G-8JH3MWD69V"
+        };
         const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.projectId || 'default-app-id';
 
         // NOTE: The API key is handled by the execution environment. Do not paste a key here.
